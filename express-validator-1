@@ -1,0 +1,86 @@
+project/
+│
+├── app.js
+├── routes/
+│   └── authRoutes.js
+├── controllers/
+│   └── authController.js
+├── validations/
+│   └── authValidation.js
+├── middleware/
+│   └── validate.js
+
+
+
+app.js(Main entry):
+
+const express = require("express");
+const app = express();
+const authRoutes = require("./routes/authRoutes");
+app.use(express.json());
+// Base route
+app.use("/api/v1/auth", authRoutes);
+app.listen(3000, () => {
+  console.log("Server running on port 3000");
+});
+
+
+
+routes/authRoutes.js:
+
+const express = require("express");
+const router = express.Router();
+const { signup } = require("../controllers/authController");
+const { signupValidation } = require("../validations/authValidation");
+const validate = require("../middleware/validate");
+// Route
+router.post("/signup", signupValidation, validate, signup);
+module.exports = router;
+
+
+controllers/authController.js
+
+exports.signup = (req, res) => {
+  const { name, email, password } = req.body;
+  // Normally you will save to DB here
+  res.status(200).json({
+    success: true,
+    message: "User registered successfully",
+    data: { name, email }
+  });
+};
+
+
+validations/authValidation.js
+
+const { body } = require("express-validator");
+exports.signupValidation = [
+  body("name")
+    .notEmpty()
+    .withMessage("Name is required"),
+  body("email")
+    .isEmail()
+    .withMessage("Valid email is required"),
+  body("password")
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters")
+];
+
+
+middleware/validate.js
+
+const { validationResult } = require("express-validator");
+const validate = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      errors: errors.array()
+    });
+  }
+  next();
+};
+module.exports = validate;
+
+
+Postman → Route → Validation → Middleware → Controller
